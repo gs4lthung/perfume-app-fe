@@ -1,16 +1,13 @@
 import { useState } from "react";
-import {
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Paper,
-  Link,
-} from "@mui/material";
+import { TextField, Button, Typography, Box, Paper, Link } from "@mui/material";
+import API from "../services/api";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -20,13 +17,16 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     }
-    console.log("Registering with:", formData);
-    // Add registration logic here (e.g., API call)
+    await API.post("/member", formData);
+    toast.success("Registration successful!");
+    setTimeout(() => {
+      navigate("/login");
+    }, 1000);
   };
 
   return (
@@ -48,8 +48,8 @@ export default function RegisterPage() {
         <TextField
           fullWidth
           label="Full Name"
-          name="fullName"
-          value={formData.fullName}
+          name="name"
+          value={formData.name}
           onChange={handleChange}
           margin="normal"
         />

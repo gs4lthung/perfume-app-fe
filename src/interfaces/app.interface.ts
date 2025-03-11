@@ -33,4 +33,5 @@ export interface Comment {
   content: string;
   rating: number;
   author: Member;
+  createdAt: Date;
 }

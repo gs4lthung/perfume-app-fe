@@ -7,12 +7,6 @@ export default function Navbar() {
   const authContext = useContext(AuthContext);
 
   const navigate = useNavigate();
-  const navLinks = [
-    { title: "Home", path: "/" },
-    { title: "About", path: "/about" },
-    { title: "Products", path: "/products" },
-    { title: "Contact", path: "/contact" },
-  ];
 
   return (
     <AppBar position="sticky" sx={{ backgroundColor: "#1976d2" }}>
@@ -23,31 +17,53 @@ export default function Navbar() {
         </Typography>
 
         {/* Centered Navigation Links */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            justifyContent: "center",
-            gap: 3,
-          }}
-        >
-          {navLinks.map((link) => (
-            <Button key={link.title} color="inherit">
-              {link.title}
-            </Button>
-          ))}
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            color="inherit"
+            onClick={() => {
+              navigate("/");
+            }}
+          >
+            Home
+          </Button>
+          {authContext?.user?.isAdmin && (
+            <>
+              <Button
+                color="inherit"
+                onClick={() => {
+                  navigate("/brands");
+                }}
+              >
+                Brands
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => {
+                  navigate("/collectors");
+                }}
+              >
+                Collectors
+              </Button>
+            </>
+          )}
         </Box>
 
         {/* Register & Login Buttons (Right Side) */}
         {authContext?.user ? (
-          <>
-            <Button variant="contained" color="secondary">
+          <div>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => {
+                navigate("/profile");
+              }}
+            >
               Profile
             </Button>
             <Button color="inherit" onClick={authContext?.logout}>
               Logout
             </Button>
-          </>
+          </div>
         ) : (
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button

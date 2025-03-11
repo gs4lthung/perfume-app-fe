@@ -13,54 +13,41 @@ import {
   Fab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../services/api";
 
 export default function Home() {
   const navigate = useNavigate();
-  const perfumes = [
-    {
-      id: 1,
-      name: "Oud Royal",
-      brand: "Armani Privé",
-      targetAudience: "Unisex",
-      concentration: "Extrait",
-      image:
-        "https://images.pexels.com/photos/1961791/pexels-photo-1961791.jpeg?cs=srgb&dl=pexels-valeriya-1961791.jpg&fm=jpg",
-    },
-    {
-      id: 2,
-      name: "Bleu de Chanel",
-      brand: "Chanel",
-      targetAudience: "Men",
-      concentration: "Eau de Parfum",
-      image:
-        "https://carltonlondon.co.in/cdn/shop/files/2_cbbb36aa-4b9a-4d05-8945-0bbcebdaf7a0.jpg?v=1705483116",
-    },
-    {
-      id: 3,
-      name: "La Vie Est Belle",
-      brand: "Lancôme",
-      targetAudience: "Women",
-      concentration: "Extrait",
-      image: "https://m.media-amazon.com/images/I/614+6kcDXOL.jpg",
-    },
-  ];
-
+  const [perfumes, setPerfumes] = useState();
+  const [brands, setBrands] = useState();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
 
-  // Filter perfumes based on search and category
-  const filteredPerfumes = perfumes.filter((perfume) => {
-    return (
-      perfume.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (selectedCategory ? perfume.targetAudience === selectedCategory : true)
-    );
-  });
-
-  const handleCreatePerfume = () => {
-    alert("Redirecting to create perfume page..."); // Replace with navigation logic
+  const fetchPerfumes = async () => {
+    try {
+      const response = await API.get(
+        `/perfume?query=${searchQuery}&filter=${selectedCategory}`
+      );
+      setPerfumes(response.data);
+    } catch (error) {
+      console.error("Error fetching perfumes:", error);
+    }
   };
+
+  const fetchBrands = async () => {
+    try {
+      const response = await API.get("/brand");
+      setBrands(response.data);
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPerfumes();
+    fetchBrands();
+  }, [searchQuery, selectedCategory]);
 
   const PerfumeCard = ({ perfume }) => {
     return (
@@ -107,7 +94,7 @@ export default function Home() {
         <CardMedia
           component="img"
           height="220"
-          image={perfume.image}
+          image={perfume.uri}
           alt={perfume.name}
           sx={{ objectFit: "cover" }}
         />
@@ -116,7 +103,7 @@ export default function Home() {
             {perfume.name}
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            {perfume.brand}
+            {perfume.brand.name}
           </Typography>
           <Typography variant="body2" fontWeight="bold" color="primary">
             {perfume.targetAudience}
@@ -145,9 +132,7 @@ export default function Home() {
         Perfume Collection
       </Typography>
 
-      {/* Search & Category Filter */}
       <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 3 }}>
-        {/* Search Input */}
         <TextField
           label="Search by name"
           variant="outlined"
@@ -156,28 +141,31 @@ export default function Home() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        {/* Category Dropdown */}
         <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Category</InputLabel>
+          <InputLabel>Brand</InputLabel>
           <Select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            label="Category"
+            label="Brand"
           >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="Unisex">Unisex</MenuItem>
-            <MenuItem value="Men">Men</MenuItem>
-            <MenuItem value="Women">Women</MenuItem>
+            <MenuItem value="">All Brands</MenuItem>
+            {brands?.map((brand) => (
+              <MenuItem key={brand._id} value={brand.name}>
+                {brand.name}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Box>
 
       {/* Perfume Collection Grid */}
       <Grid container spacing={3} justifyContent="center">
-        {filteredPerfumes.length > 0 ? (
-          filteredPerfumes.map((perfume) => (
+        {perfumes?.length > 0 ? (
+          perfumes.map((perfume) => (
             <Grid item key={perfume.id}>
-              <PerfumeCard perfume={perfume} />
+              <div onClick={() => navigate(`/perfume/${perfume._id}`)}>
+                <PerfumeCard perfume={perfume} />
+              </div>
             </Grid>
           ))
         ) : (

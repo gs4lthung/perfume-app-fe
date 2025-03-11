@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,53 +8,71 @@ import {
   TableRow,
   Paper,
   Button,
+  TextField,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
 } from "@mui/material";
+import { Member } from "../interfaces/app.interface";
+import API from "../services/api";
+import AuthContext from "../contexts/AuthContext";
 
 const CollectorPage = () => {
-  interface User {
-    id: number;
-    name: string;
-    email: string;
-    password: string;
-    yearOfBirth: number;
-    gender: string;
-    isDeleted: boolean;
-  }
-  
-  const [users, setUsers] = useState<User[]>([]);
+  const authContext = useContext(AuthContext);
+  const [users, setUsers] = useState<Member[]>([]);
+  const [editingUser, setEditingUser] = useState<Member | null>(null);
+  const [editedUser, setEditedUser] = useState<Member | null>(null);
+
+  const fetchMembers = async () => {
+    try {
+      const response = await API.get("/member");
+      setUsers(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
-    // Simulating fetching users from an API
-    setUsers([
-      {
-        id: 1,
-        name: "John Doe",
-        email: "john@example.com",
-        password: "******",
-        yearOfBirth: 1990,
-        gender: "Male",
-        isDeleted: false,
-      },
-      {
-        id: 2,
-        name: "Jane Smith",
-        email: "jane@example.com",
-        password: "******",
-        yearOfBirth: 1995,
-        gender: "Female",
-        isDeleted: false,
-      },
-      {
-        id: 3,
-        name: "Mike Johnson",
-        email: "mike@example.com",
-        password: "******",
-        yearOfBirth: 1988,
-        gender: "Male",
-        isDeleted: true,
-      },
-    ]);
+    fetchMembers();
   }, []);
+
+  const handleEdit = (user: Member) => {
+    setEditingUser(user);
+    setEditedUser({ ...user });
+  };
+
+  const handleSave = async () => {
+    if (editedUser) {
+      try {
+        await API.patch(`/member/${editedUser._id}`, {
+          name: editedUser.name,
+          email: editedUser.email,
+          yob: Number(editedUser.yob),
+          gender: editedUser.gender,
+        });
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === editedUser._id ? editedUser : user
+          )
+        );
+        setEditingUser(null);
+        setEditedUser(null);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (editedUser) {
+      setEditedUser({ ...editedUser, [e.target.name]: e.target.value });
+    }
+  };
+  const handleSelectChange = (e: SelectChangeEvent<boolean>) => {
+    if (editedUser) {
+      setEditedUser({ ...editedUser, [e.target.name]: e.target.value });
+    }
+  };
 
   return (
     <div className="container mx-auto p-6">
@@ -63,46 +81,98 @@ const CollectorPage = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
+              <TableCell>No</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Password</TableCell>
               <TableCell>Year of Birth</TableCell>
               <TableCell>Gender</TableCell>
-              <TableCell>Is Deleted</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.password}</TableCell>
-                <TableCell>{user.yearOfBirth}</TableCell>
-                <TableCell>{user.gender}</TableCell>
-                <TableCell>{user.isDeleted ? "Yes" : "No"}</TableCell>
+            {users.map((user, index) => (
+              <TableRow key={index}>
+                <TableCell>{index + 1}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    style={{ marginRight: 8 }}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="warning"
-                    size="small"
-                    style={{ marginRight: 8 }}
-                  >
-                    Edit
-                  </Button>
-                  <Button variant="contained" color="error" size="small">
-                    Delete
-                  </Button>
+                  {editingUser?._id === user._id ? (
+                    <TextField
+                      name="name"
+                      value={editedUser?.name || ""}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    user.name
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingUser?._id === user._id ? (
+                    <TextField
+                      name="email"
+                      value={editedUser?.email || ""}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    user.email
+                  )}
+                </TableCell>
+                <TableCell>*****</TableCell>
+                <TableCell>
+                  {editingUser?._id === user._id ? (
+                    <TextField
+                      name="yob"
+                      value={editedUser?.yob || ""}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    user.yob
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingUser?._id === user._id ? (
+                    <Select
+                      name="gender"
+                      value={editedUser?.gender}
+                      onChange={handleSelectChange}
+                    >
+                      <MenuItem value={true}>Male</MenuItem>
+                      <MenuItem value={false}>Female</MenuItem>
+                    </Select>
+                  ) : user.gender === true ? (
+                    "♂️"
+                  ) : (
+                    "♀️"
+                  )}
+                </TableCell>
+                <TableCell>
+                  {authContext?.user?._id === user._id && (
+                    <>
+                      {editingUser?._id === user._id ? (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={handleSave}
+                          style={{ marginRight: 8 }}
+                        >
+                          Save
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          size="small"
+                          onClick={() => handleEdit(user)}
+                          style={{ marginRight: 8 }}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                      <Button variant="contained" color="error" size="small">
+                        Delete
+                      </Button>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

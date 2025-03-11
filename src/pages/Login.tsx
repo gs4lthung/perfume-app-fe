@@ -141,15 +141,10 @@ export default function LoginPage() {
         </Button>
 
         {/* Links */}
-        <Box mt={2}>
-          <Link href="#" variant="body2">
-            Forgot password?
-          </Link>
-        </Box>
         <Box mt={1}>
           <Typography variant="body2">
             Don't have an account?{" "}
-            <Link href="#" variant="body2">
+            <Link href="/register" variant="body2">
               Register here
             </Link>
           </Typography>

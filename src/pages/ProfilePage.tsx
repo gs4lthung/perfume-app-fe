@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -12,32 +12,65 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
-  Chip,
   Badge,
   Select,
   MenuItem,
 } from "@mui/material";
 import { Member } from "../interfaces/app.interface";
 import AuthContext from "../contexts/AuthContext";
+import API from "../services/api";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
   const authContext = useContext(AuthContext);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Member | null>(null);
+  const [formData, setFormData] = useState<Member | null>({
+    _id: authContext?.user?._id || "",
+    name: authContext?.user?.name || "",
+    email: authContext?.user?.email || "",
+    yob: authContext?.user?.yob || 0,
+    avatar: authContext?.user?.avatar || "",
+    gender: authContext?.user?.gender || true,
+    isAdmin: authContext?.user?.isAdmin || false,
+    password: "",
+  });
 
-  const genderOptions = [
-    { label: "Male", value: true },
-    { label: "Female", value: false },
-  ];
+  useEffect(() => {
+    setFormData({
+      _id: authContext?.user?._id || "",
+      name: authContext?.user?.name || "",
+      email: authContext?.user?.email || "",
+      yob: authContext?.user?.yob || 0,
+      avatar: authContext?.user?.avatar || "",
+      gender: authContext?.user?.gender || true,
+      isAdmin: authContext?.user?.isAdmin || false,
+      password: "",
+    });
+  }, [authContext?.user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
-    console.log("Updated data:", formData);
+    const response = await API.patch(`/member/${authContext?.user?._id}`, {
+      name: formData?.name,
+      email: formData?.email,
+      yob: formData?.yob,
+      avatar: formData?.avatar,
+      gender: formData?.gender,
+    });
+    authContext?.setUser(response.data);
+    toast.success("Profile updated successfully");
   };
 
   const handleChangePassword = () => {
@@ -67,7 +100,8 @@ const ProfilePage = () => {
               fullWidth
               name="name"
               label="Name"
-              value={authContext?.user?.name}
+              value={formData?.name}
+              onChange={handleChange}
             />
           ) : (
             <Typography variant="h5" fontWeight="bold">
@@ -88,7 +122,7 @@ const ProfilePage = () => {
               fullWidth
               name="email"
               label="Email"
-              value={authContext?.user?.email}
+              value={formData?.email}
             />
           ) : (
             <Typography color="textSecondary">
@@ -101,26 +135,16 @@ const ProfilePage = () => {
               fullWidth
               name="yob"
               label="Year of Birth"
-              value={authContext?.user?.yob}
+              value={formData?.yob}
             />
           ) : (
             <Typography>Year of Birth: {authContext?.user?.yob}</Typography>
           )}
 
           {isEditing ? (
-            <Select
-              name="gender"
-              value={authContext?.user?.gender ?? ""}
-              disabled // Prevent user from changing it
-            >
-              {genderOptions.map((option) => (
-                <MenuItem
-                  key={option.value.toString()}
-                  value={option.value.toString()}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
+            <Select name="gender" value={formData?.gender}>
+              <MenuItem value={true}>Male</MenuItem>
+              <MenuItem value={false}>Female</MenuItem>
             </Select>
           ) : (
             <Typography>
@@ -133,7 +157,8 @@ const ProfilePage = () => {
               fullWidth
               name="avatar"
               label="Avatar URL"
-              value={authContext?.user?.avatar}
+              value={formData?.avatar}
+              onChange={handleChange}
             />
           )}
 

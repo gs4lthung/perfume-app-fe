@@ -10,8 +10,7 @@ import CollectorPage from "./pages/CollectorPage";
 import BrandPage from "./pages/BrandPage";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
-import MemberRoute from "./routes/MemberRoute";
-import AdminRoute from "./routes/AdminRoute";
+import CreatePerfume from "./pages/CreatePerfume";
 export default function App() {
   const location = useLocation();
   const isAuthorization =
@@ -25,19 +24,10 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/perfume/:id" element={<PerfumeDetail />} />
+          <Route path="/perfume-new" element={<CreatePerfume />} />
+          <Route path="/brands" element={<BrandPage />} />
           <Route path="/collectors" element={<CollectorPage />} />
-          <Route
-            path="/perfume"
-            element={<PerfumeDetail userRole={"admin"} />}
-          />
-          <Route
-            path="/brands"
-            element={
-              <AdminRoute>
-                <BrandPage />
-              </AdminRoute>
-            }
-          />
         </Routes>
         {!isAuthorization && <Footer />}
         <Toaster />

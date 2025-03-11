@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -20,80 +20,113 @@ import {
   Divider,
   ListItemAvatar,
   Avatar,
-  Skeleton,
+  SelectChangeEvent,
+  FormControl,
+  InputLabel,
+  Select,
+  Rating,
 } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
+import API from "../services/api";
+import { Brand, Comment, Perfume } from "../interfaces/app.interface";
+import AuthContext from "../contexts/AuthContext";
+import toast from "react-hot-toast";
 
-const PerfumeDetail = ({ userRole }) => {
-  // Mock perfume data
-  const [perfume, setPerfume] = useState({
-    id: 1,
-    name: "Oud Royal",
-    image:
-      "https://images.pexels.com/photos/1961791/pexels-photo-1961791.jpeg?cs=srgb&dl=pexels-valeriya-1961791.jpg&fm=jpg",
-    price: 250,
-    concentration: "Extrait",
-    description:
-      "A luxurious blend of oud and floral notes, perfect for any occasion. A luxurious blend of oud and floral notes, perfect for any occasion. A luxurious blend of oud and floral notes, perfect for any occasion. A luxurious blend of oud and floral notes, perfect for any occasion.",
-    ingredients: "Oud, Rose, Amber, Musk",
-    volume: 100,
-    targetAudience: "Unisex",
-    brand: "Armani Privé",
-  });
-
+const PerfumeDetail = () => {
+  const navigate = useNavigate();
+  const authContext = useContext(AuthContext);
+  const [perfume, setPerfume] = useState<Perfume | null>(null);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState<Comment | null>(null);
+  const { id } = useParams();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(perfume);
+  const [formData, setFormData] = useState<Perfume | null>(perfume);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [tempImage, setTempImage] = useState(perfume.image);
+  const [tempImage, setTempImage] = useState(perfume?.uri);
+
+  const fetchPerfume = async () => {
+    try {
+      const response = await API.get(`/perfume/${id}`);
+      if (!response.data) {
+        navigate("/");
+      }
+      setPerfume(response.data);
+      setFormData(response.data);
+      setTempImage(response.data?.uri);
+    } catch (error) {
+      console.error("Error fetching perfume:", error);
+    }
+  };
+
+  const fetchBrands = async () => {
+    try {
+      const response = await API.get("/brand");
+      setBrands(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchComments = async () => {
+    const response = await API.get(`/comment/perfume/${id}`);
+    console.log(response.data);
+    setComments(response.data);
+  };
+  useEffect(() => {
+    fetchPerfume();
+    fetchBrands();
+    fetchComments();
+  }, []);
 
   // Handle form input changes
   const handleChange = (e) => {
-    if (e.target.name === "image") {
+    if (e.target.name === "uri") {
       if (e.target.value === "") {
-        setTempImage(perfume.image);
+        setTempImage(perfume?.uri);
       } else setTempImage(e.target.value);
     }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSelectChange = (event: SelectChangeEvent) => {
+    const brand = brands.find((brand) => brand._id === event.target.value);
+    setFormData({ ...formData, brand });
+  };
+
   // Save the updated perfume information
-  const handleSave = () => {
+  const handleSave = async () => {
+    await API.patch(`/perfume/${id}`, {
+      ...formData,
+      volume: parseInt(formData?.volume),
+      price: parseInt(formData?.price),
+      brand: formData?.brand._id,
+    });
+    toast.success("Perfume updated successfully!");
     setPerfume(formData);
     setIsEditing(false);
   };
 
   // Delete confirmation
-  const handleDelete = () => {
-    alert("Perfume deleted successfully!");
+  const handleDelete = async () => {
+    await API.delete(`/perfume/${id}`);
+    toast.success("Perfume deleted successfully!");
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
     setOpenDeleteDialog(false);
-    // Add deletion logic (e.g., API call)
   };
 
-  const currentUser = {
-    name: "John Doe",
-    avatar: "https://i.pravatar.cc/50", // Placeholder avatar image
-  };
-
-  interface Comment {
-    author: string;
-    avatar: string;
-    text: string;
-    date: string;
-  }
-
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState("");
-
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      const newCommentObj = {
-        author: currentUser.name,
-        avatar: currentUser.avatar,
-        text: newComment,
-        date: new Date().toLocaleString(), // Format: "3/5/2025, 10:30 AM"
-      };
-
-      setComments([...comments, newCommentObj]);
-      setNewComment(""); // Clear input field after submitting
+  const handleAddComment = async () => {
+    if (newComment?.content) {
+      await API.post("/comment", {
+        content: newComment?.content,
+        rating: Number(newComment?.rating),
+        perfumeId: id,
+        authorId: authContext?.user?._id,
+      });
+      toast.success("Comment added successfully!");
+      fetchComments();
     }
   };
 
@@ -110,7 +143,7 @@ const PerfumeDetail = ({ userRole }) => {
           }}
         >
           {/* Extrait Badge */}
-          {perfume.concentration === "Extrait" && (
+          {perfume?.concentration === "Extrait" && (
             <Box
               sx={{
                 position: "absolute",
@@ -142,8 +175,8 @@ const PerfumeDetail = ({ userRole }) => {
               borderBottomLeftRadius: { md: 12 },
             }}
             loading="lazy"
-            image={tempImage}
-            alt={perfume.name}
+            src={tempImage}
+            alt={perfume?.name}
           />
           {/* Content Section */}
           <CardContent sx={{ flex: 1 }}>
@@ -154,7 +187,7 @@ const PerfumeDetail = ({ userRole }) => {
                     fullWidth
                     label="Name"
                     name="name"
-                    value={formData.name}
+                    value={formData?.name}
                     onChange={handleChange}
                   />
                 </Grid>
@@ -164,32 +197,48 @@ const PerfumeDetail = ({ userRole }) => {
                     label="Price $"
                     name="price"
                     type="number"
-                    value={formData.price}
+                    value={formData?.price}
                     onChange={handleChange}
                   />
                 </Grid>
                 <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    select
-                    label="Brand"
-                    name="brand"
-                    value={formData.brand}
-                    onChange={handleChange}
-                  >
-                    <MenuItem value="Armani Privé">Armani Privé</MenuItem>
-                    <MenuItem value="Tom Ford">Tom Ford</MenuItem>
-                    <MenuItem value="Creed">Creed</MenuItem>
-                  </TextField>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="brand-label">Brand</InputLabel>
+                    <Select
+                      name="brand"
+                      labelId="brand-label"
+                      value={formData?.brand._id ?? ""} // Ensuring it's never undefined
+                      onChange={handleSelectChange}
+                    >
+                      <MenuItem value="" disabled>
+                        Select Brand
+                      </MenuItem>
+                      {brands.map((brand) => (
+                        <MenuItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    label="Concentration"
-                    name="concentration"
-                    value={formData.concentration}
-                    onChange={handleChange}
-                  />
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="concentration-label">
+                      Concentration
+                    </InputLabel>
+                    <Select
+                      labelId="concentration-label"
+                      value={formData?.concentration}
+                      name="concentration"
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="EDP">EDP</MenuItem>
+                      <MenuItem value="EDC">EDC</MenuItem>
+                      <MenuItem value="EDT">EDT</MenuItem>
+                      <MenuItem value="Parfum">Parfum</MenuItem>
+                      <MenuItem value="Extrait">Extrait</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
@@ -198,7 +247,7 @@ const PerfumeDetail = ({ userRole }) => {
                     name="description"
                     multiline
                     rows={3}
-                    value={formData.description}
+                    value={formData?.description}
                     onChange={handleChange}
                   />
                 </Grid>
@@ -207,7 +256,7 @@ const PerfumeDetail = ({ userRole }) => {
                     fullWidth
                     label="Ingredients"
                     name="ingredients"
-                    value={formData.ingredients}
+                    value={formData?.ingredients}
                     onChange={handleChange}
                   />
                 </Grid>
@@ -217,7 +266,7 @@ const PerfumeDetail = ({ userRole }) => {
                     label="Volume (ml)"
                     name="volume"
                     type="number"
-                    value={formData.volume}
+                    value={formData?.volume}
                     onChange={handleChange}
                   />
                 </Grid>
@@ -227,7 +276,7 @@ const PerfumeDetail = ({ userRole }) => {
                     select
                     label="Target Audience"
                     name="targetAudience"
-                    value={formData.targetAudience}
+                    value={formData?.targetAudience}
                     onChange={handleChange}
                   >
                     <MenuItem value="Male">Male</MenuItem>
@@ -239,8 +288,8 @@ const PerfumeDetail = ({ userRole }) => {
                   <TextField
                     fullWidth
                     label="Image URL"
-                    name="image"
-                    value={formData.image}
+                    name="uri"
+                    value={formData?.uri}
                     onChange={handleChange}
                   />
                 </Grid>
@@ -270,37 +319,37 @@ const PerfumeDetail = ({ userRole }) => {
               <>
                 {/* User View */}
                 <Typography variant="h4" fontWeight="bold">
-                  {perfume.name}
+                  {perfume?.name}
                 </Typography>
                 <Typography variant="h6" color="green">
-                  $ {perfume.price}
+                  $ {perfume?.price}
                 </Typography>
                 <Typography variant="h6">
-                  <strong>Brand:</strong> {perfume.brand}
+                  <strong>Brand:</strong> {perfume?.brand?.name}
                 </Typography>
                 <Typography variant="body1" color="textSecondary">
-                  <strong>Concentration:</strong> {perfume.concentration}
+                  <strong>Concentration:</strong> {perfume?.concentration}
                 </Typography>
                 <Typography variant="body2" mt={2}>
-                  {perfume.description}
+                  {perfume?.description}
                 </Typography>
                 <Typography variant="body2" mt={2}>
-                  <strong>Ingredients:</strong> {perfume.ingredients}
+                  <strong>Ingredients:</strong> {perfume?.ingredients}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Volume:</strong> {perfume.volume} ml
+                  <strong>Volume:</strong> {perfume?.volume} ml
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Target Audience:</strong> {perfume.targetAudience}{" "}
-                  {perfume.targetAudience === "Unisex"
+                  <strong>Target Audience:</strong> {perfume?.targetAudience}{" "}
+                  {perfume?.targetAudience === "Unisex"
                     ? "👫"
-                    : perfume.targetAudience === "Male"
+                    : perfume?.targetAudience === "Male"
                     ? "👨"
                     : "👩"}
                 </Typography>
 
                 {/* Admin Actions */}
-                {userRole === "admin" && (
+                {authContext?.user?.isAdmin && (
                   <Box mt={3} display="flex" justifyContent="space-between">
                     <Button
                       variant="contained"
@@ -353,54 +402,107 @@ const PerfumeDetail = ({ userRole }) => {
           Comments
         </Typography>
 
-        {/* Comment Input */}
-        <Box display="flex" alignItems="center" gap={2} mt={2}>
-          <TextField
-            fullWidth
-            label="Write a comment..."
-            variant="outlined"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAddComment}
-          >
-            Submit
-          </Button>
-        </Box>
+        {!authContext?.user?.isAdmin && !comments.some(comment => comment.author._id === authContext?.user?._id) && (
+          <>
+            <Box display="flex" alignItems="center" gap={2} mt={2}>
+              <TextField
+          fullWidth
+          label="Write a comment..."
+          variant="outlined"
+          value={newComment?.content || ""}
+          onChange={(e) =>
+            setNewComment({ ...newComment, content: e.target.value })
+          }
+              />
+              <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAddComment}
+              >
+          Submit
+              </Button>
+            </Box>
+            <Rating
+              name="rating"
+              max={3}
+              value={newComment?.rating || 0}
+              onChange={(e) => {
+          console.log(e.target.value);
+          setNewComment({ ...newComment, rating: e.target.value });
+              }}
+            />
+          </>
+        )}
 
         {/* Comment List */}
-        <List sx={{ mt: 2 }}>
+        <List
+          sx={{
+            mt: 2,
+            width: "100%",
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 1,
+          }}
+        >
           {comments.length > 0 ? (
             comments.map((comment, index) => (
-              <Box key={index}>
-                <ListItem alignItems="flex-start">
+              <Box key={comment._id || index} sx={{ p: 2 }}>
+                <ListItem
+                  alignItems="flex-start"
+                  sx={{ display: "flex", alignItems: "center" }}
+                >
                   <ListItemAvatar>
-                    <Avatar src={comment.avatar} alt={comment.author} />
+                    <Avatar
+                      src={comment.author?.avatar}
+                      alt={comment.author?.name}
+                    />
                   </ListItemAvatar>
                   <ListItemText
                     primary={
                       <Typography variant="subtitle2" fontWeight="bold">
-                        {comment.author}
+                        {authContext?.user?._id === comment.author._id ? (
+                          <Typography
+                            variant="subtitle2"
+                            color="primary"
+                            fontWeight="bold"
+                          >
+                            You
+                          </Typography>
+                        ) : (
+                          comment.author?.name
+                        )}
                       </Typography>
                     }
                     secondary={
                       <>
-                        <Typography variant="body2" color="textSecondary">
-                          {comment.date}
+                        <Typography variant="body1" sx={{ mt: 0.5 }}>
+                          {comment.content}
                         </Typography>
-                        <Typography variant="body1">{comment.text}</Typography>
+                        <Rating
+                          max={3}
+                          name="read-only"
+                          value={comment.rating}
+                          readOnly
+                          sx={{ mt: 1 }}
+                        />
                       </>
                     }
                   />
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <Typography variant="body2" color="textSecondary">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </Typography>
+                  </Box>
                 </ListItem>
                 <Divider />
               </Box>
             ))
           ) : (
-            <Typography variant="body2" color="textSecondary">
+            <Typography
+              variant="body2"
+              color="textSecondary"
+              sx={{ p: 2, textAlign: "center" }}
+            >
               No comments yet. Be the first to share your thoughts!
             </Typography>
           )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -16,8 +16,12 @@ import {
 } from "@mui/material";
 import { Brand } from "../interfaces/app.interface";
 import API from "../services/api";
+import AuthContext from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const PerfumeBrandsPage = () => {
+  const authContext = useContext(AuthContext);
+  const navigate = useNavigate();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [open, setOpen] = useState(false);
   const [currentBrand, setCurrentBrand] = useState<Brand | null>({
@@ -26,6 +30,9 @@ const PerfumeBrandsPage = () => {
   });
 
   useEffect(() => {
+    if (!authContext?.user?.isAdmin) {
+      navigate("/");
+    }
     fetchBrands();
   }, []);
 
