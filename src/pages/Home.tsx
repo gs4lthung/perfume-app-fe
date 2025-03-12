@@ -13,9 +13,10 @@ import {
   Fab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import AuthContext from "../contexts/AuthContext";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function Home() {
   const [brands, setBrands] = useState();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const authContext = useContext(AuthContext);
 
   const fetchPerfumes = async () => {
     try {
@@ -175,23 +177,24 @@ export default function Home() {
         )}
       </Grid>
 
-      {/* Floating Action Button (FAB) */}
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={() => {
-          navigate("/perfume-new");
-        }}
-        sx={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          backgroundColor: "#1976D2",
-          "&:hover": { backgroundColor: "#1565C0" },
-        }}
-      >
-        <AddIcon />
-      </Fab>
+      {authContext?.user?.isAdmin && (
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={() => {
+            navigate("/perfume-new");
+          }}
+          sx={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            backgroundColor: "#1976D2",
+            "&:hover": { backgroundColor: "#1565C0" },
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
     </Box>
   );
 }

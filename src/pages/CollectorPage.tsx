@@ -16,9 +16,11 @@ import {
 import { Member } from "../interfaces/app.interface";
 import API from "../services/api";
 import AuthContext from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const CollectorPage = () => {
   const authContext = useContext(AuthContext);
+  const navigate = useNavigate();
   const [users, setUsers] = useState<Member[]>([]);
   const [editingUser, setEditingUser] = useState<Member | null>(null);
   const [editedUser, setEditedUser] = useState<Member | null>(null);
@@ -33,6 +35,9 @@ const CollectorPage = () => {
   };
 
   useEffect(() => {
+    if (!authContext?.user?.isAdmin) {
+      navigate("/");
+    }
     fetchMembers();
   }, []);
 

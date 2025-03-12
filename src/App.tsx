@@ -11,6 +11,7 @@ import BrandPage from "./pages/BrandPage";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import CreatePerfume from "./pages/CreatePerfume";
+import ChangePassword from "./pages/ChangePassword";
 export default function App() {
   const location = useLocation();
   const isAuthorization =
@@ -28,6 +29,8 @@ export default function App() {
           <Route path="/perfume-new" element={<CreatePerfume />} />
           <Route path="/brands" element={<BrandPage />} />
           <Route path="/collectors" element={<CollectorPage />} />
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="*" element={<h1>Not Found</h1>} />
         </Routes>
         {!isAuthorization && <Footer />}
         <Toaster />

@@ -20,8 +20,10 @@ import { Member } from "../interfaces/app.interface";
 import AuthContext from "../contexts/AuthContext";
 import API from "../services/api";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const authContext = useContext(AuthContext);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -65,7 +67,7 @@ const ProfilePage = () => {
     const response = await API.patch(`/member/${authContext?.user?._id}`, {
       name: formData?.name,
       email: formData?.email,
-      yob: formData?.yob,
+      yob: Number(formData?.yob),
       avatar: formData?.avatar,
       gender: formData?.gender,
     });
@@ -123,6 +125,7 @@ const ProfilePage = () => {
               name="email"
               label="Email"
               value={formData?.email}
+              onChange={handleChange}
             />
           ) : (
             <Typography color="textSecondary">
@@ -136,13 +139,18 @@ const ProfilePage = () => {
               name="yob"
               label="Year of Birth"
               value={formData?.yob}
+              onChange={handleChange}
             />
           ) : (
             <Typography>Year of Birth: {authContext?.user?.yob}</Typography>
           )}
 
           {isEditing ? (
-            <Select name="gender" value={formData?.gender}>
+            <Select
+              name="gender"
+              value={formData?.gender}
+              onChange={handleChange}
+            >
               <MenuItem value={true}>Male</MenuItem>
               <MenuItem value={false}>Female</MenuItem>
             </Select>
@@ -188,7 +196,9 @@ const ProfilePage = () => {
             <Button
               variant="outlined"
               color="secondary"
-              onClick={handleChangePassword}
+              onClick={() => {
+                navigate("/change-password");
+              }}
             >
               Change Password
             </Button>
