@@ -24,7 +24,9 @@ API.interceptors.response.use(
     } else if (error.response.status === 401) {
       toast.error("Unauthorized! Please login again.");
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 10000);
     } else if (error.response.status === 403) {
       toast.error("Forbidden");
     } else if (error.response.status === 404) {

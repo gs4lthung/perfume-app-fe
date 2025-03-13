@@ -92,7 +92,6 @@ const CollectorPage = () => {
               <TableCell>Password</TableCell>
               <TableCell>Year of Birth</TableCell>
               <TableCell>Gender</TableCell>
-              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -147,36 +146,6 @@ const CollectorPage = () => {
                     "♂️"
                   ) : (
                     "♀️"
-                  )}
-                </TableCell>
-                <TableCell>
-                  {authContext?.user?._id === user._id && (
-                    <>
-                      {editingUser?._id === user._id ? (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={handleSave}
-                          style={{ marginRight: 8 }}
-                        >
-                          Save
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="contained"
-                          color="warning"
-                          size="small"
-                          onClick={() => handleEdit(user)}
-                          style={{ marginRight: 8 }}
-                        >
-                          Edit
-                        </Button>
-                      )}
-                      <Button variant="contained" color="error" size="small">
-                        Delete
-                      </Button>
-                    </>
                   )}
                 </TableCell>
               </TableRow>

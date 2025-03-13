@@ -39,6 +39,11 @@ const ProfilePage = () => {
   });
 
   useEffect(() => {
+    if (!authContext?.user) {
+      navigate("/login");
+    }
+  }, []);
+  useEffect(() => {
     setFormData({
       _id: authContext?.user?._id || "",
       name: authContext?.user?.name || "",
@@ -213,7 +218,6 @@ const ProfilePage = () => {
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}

@@ -118,6 +118,10 @@ const PerfumeDetail = () => {
   };
 
   const handleAddComment = async () => {
+    if (!authContext?.user) {
+      toast.error("Please login to add a comment");
+      return;
+    }
     if (newComment?.content) {
       await API.post("/comment", {
         content: newComment?.content,
@@ -129,14 +133,13 @@ const PerfumeDetail = () => {
       fetchComments();
     }
   };
-
   return (
     <>
       <Box sx={{ maxWidth: 1000, margin: "auto", mt: 4, p: 3 }}>
         <Card
           sx={{
             display: "flex",
-            flexDirection: { xs: "column", md: "row" }, // Stack on mobile, row on larger screens
+            flexDirection: { xs: "column", md: "row" },
             boxShadow: "0px 5px 15px rgba(0,0,0,0.2)",
             borderRadius: 3,
             position: "relative",
@@ -168,7 +171,7 @@ const PerfumeDetail = () => {
           <CardMedia
             component="img"
             sx={{
-              width: { xs: "100%", md: 300 }, // Full width on small screens, fixed width on larger
+              width: { xs: "100%", md: 300 },
               height: "auto",
               objectFit: "cover",
               borderTopLeftRadius: 12,
@@ -402,37 +405,40 @@ const PerfumeDetail = () => {
           Comments
         </Typography>
 
-        {!authContext?.user?.isAdmin && !comments.some(comment => comment.author._id === authContext?.user?._id) && (
-          <>
-            <Box display="flex" alignItems="center" gap={2} mt={2}>
-              <TextField
-          fullWidth
-          label="Write a comment..."
-          variant="outlined"
-          value={newComment?.content || ""}
-          onChange={(e) =>
-            setNewComment({ ...newComment, content: e.target.value })
-          }
+        {!authContext?.user?.isAdmin &&
+          !comments.some(
+            (comment) => comment.author._id === authContext?.user?._id
+          ) && (
+            <>
+              <Box display="flex" alignItems="center" gap={2} mt={2}>
+                <TextField
+                  fullWidth
+                  label="Write a comment..."
+                  variant="outlined"
+                  value={newComment?.content || ""}
+                  onChange={(e) =>
+                    setNewComment({ ...newComment, content: e.target.value })
+                  }
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleAddComment}
+                >
+                  Submit
+                </Button>
+              </Box>
+              <Rating
+                name="rating"
+                max={3}
+                value={newComment?.rating || 0}
+                onChange={(e) => {
+                  console.log(e.target.value);
+                  setNewComment({ ...newComment, rating: e.target.value });
+                }}
               />
-              <Button
-          variant="contained"
-          color="primary"
-          onClick={handleAddComment}
-              >
-          Submit
-              </Button>
-            </Box>
-            <Rating
-              name="rating"
-              max={3}
-              value={newComment?.rating || 0}
-              onChange={(e) => {
-          console.log(e.target.value);
-          setNewComment({ ...newComment, rating: e.target.value });
-              }}
-            />
-          </>
-        )}
+            </>
+          )}
 
         {/* Comment List */}
         <List

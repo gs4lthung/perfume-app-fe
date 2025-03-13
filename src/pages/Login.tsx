@@ -80,7 +80,7 @@ export default function LoginPage() {
         password: "***",
       });
       setTimeout(() => {
-        navigate("/");
+        navigate(-1);
       }, 1000);
       console.log(response.data);
     } catch (error) {
